@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机械臂控制台</title>
+<style>
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;padding:14px;background:#111;color:#eee}
+h1{font-size:18px;margin:0 0 10px}
+.row{display:flex;align-items:center;gap:8px;margin:7px 0}
+.row label{width:64px;font-size:14px;color:#bbb}
+.row input[type=range]{flex:1}
+.row .v{width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{padding:9px 14px;border:0;border-radius:8px;background:#2d6cdf;color:#fff;font-size:14px}
+button.g{background:#444}
+button.r{background:#c0392b}
+.st{font-size:13px;color:#8ab4f8;margin:10px 0;white-space:pre-wrap}
+input[type=number]{width:72px;background:#222;color:#eee;border:1px solid #444;border-radius:6px;padding:5px}
+select{background:#222;color:#eee;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px}
+input[type=number].xyz{width:64px}
+</style></head><body>
+<h1>6 轴机械臂控制台</h1>
+<div class="st" id="st">连接中…</div>
+<div id="sl"></div>
+<div class="row"><label>时间ms(0=最快)</label>
+<input type="number" id="ms" value="0" min="0" max="5000" step="50">
+<button class="g" id="live">拖动即发送：关</button></div>
+<div class="row"><label>X cm</label><input type="number" class="xyz" id="px" value="15" step="0.5" min="-40" max="40">
+<label style="width:auto">Y</label><input type="number" class="xyz" id="py" value="0" step="0.5" min="-40" max="40">
+<label style="width:auto">Z</label><input type="number" class="xyz" id="pz" value="12" step="0.5" min="0" max="40"></div>
+<div class="row"><label>工具姿态</label>
+<select id="pt"><option value="0">夹爪水平</option><option value="-90">夹爪朝下</option><option value="auto">随小臂</option></select>
+<button id="move">移动到坐标</button>
+<button id="line">直线移动</button></div>
+<div class="btns">
+<button id="send">发送角度</button>
+<button class="g" id="center">全部回中位</button>
+<button class="g" id="go">夹爪张开</button>
+<button class="g" id="gc">夹爪闭合</button>
+<button class="r" id="stop">急停</button>
+<button class="g" id="q">查询状态</button>
+<button class="g" id="m0">体感模式</button>
+<button id="m1">远程模式</button>
+</div>
+<details style="margin-top:14px">
+<summary style="cursor:pointer;font-size:13px;color:#9aa">固件升级（不用插 USB）</summary>
+<div class="row"><span style="font-size:13px;color:#889">ESP32-S3 固件（hand_s3.bin）</span></div>
+<div class="row"><input type="file" id="fw" accept=".bin" style="font-size:13px;color:#bbb"></div>
+<div class="row"><button id="up">上传并重启</button><span id="pg" style="font-size:13px;color:#8ab4f8"></span></div>
+<div class="row" style="margin-top:10px"><span style="font-size:13px;color:#889">STM32 固件（hand_app.bin，走串口 IAP）</span></div>
+<div class="row"><input type="file" id="fw2" accept=".bin" style="font-size:13px;color:#bbb"></div>
+<div class="row"><button id="up2">烧到 STM32</button><span id="pg2" style="font-size:13px;color:#8ab4f8"></span></div>
+</details>
+<script>
+const N=['底座','大臂','小臂','腕俯仰','腕旋转','夹爪'];
+const S=[];
+const box=document.getElementById('sl');
+N.forEach((n,i)=>{
+  const d=document.createElement('div'); d.className='row';
+  d.innerHTML='<label>'+n+'</label><input type="range" min="0" max="180" value="90" id="s'+i+'"><span class="v" id="v'+i+'">90</span>';
+  box.appendChild(d);
+});
+N.forEach((n,i)=>{
+  const s=document.getElementById('s'+i); S.push(s);
+  s.addEventListener('input',()=>{
+    document.getElementById('v'+i).textContent=s.value;
+    touch=Date.now();
+    if(live){ const t=Date.now(); if(t-last>80){ last=t; send(); } }
+  });
+});
+let live=false,last=0,touch=0;
+const msEl=document.getElementById('ms');
+function angles(){ return S.map(s=>s.value).join(','); }
+function api(p,txt){ fetch(p).then(r=>r.text()).then(t=>{ if(txt) log(txt+' → '+t); }).catch(()=>{}); }
+function send(){ api('/api/pose?angles='+angles()+'&ms='+msEl.value,'发送'); }
+document.getElementById('send').onclick=send;
+document.getElementById('center').onclick=()=>{ S.forEach((s,i)=>{s.value=90;document.getElementById('v'+i).textContent='90';}); send(); };
+document.getElementById('go').onclick=()=>api('/api/gripper?open=1','张开');
+document.getElementById('gc').onclick=()=>api('/api/gripper?open=0','闭合');
+document.getElementById('stop').onclick=()=>api('/api/stop','急停');
+document.getElementById('q').onclick=()=>api('/api/query','查询');
+document.getElementById('m0').onclick=()=>api('/api/mode?remote=0','切体感');
+document.getElementById('m1').onclick=()=>api('/api/mode?remote=1','切远程');
+document.getElementById('live').onclick=e=>{ live=!live; e.target.textContent='拖动即发送：'+(live?'开':'关'); };
+/* 坐标模式：ESP 内部跑逆运动学，返回算出来的角度 */
+function moveTo(){
+  const p='/api/cart?x='+document.getElementById('px').value
+        +'&y='+document.getElementById('py').value
+        +'&z='+document.getElementById('pz').value
+        +'&pitch='+document.getElementById('pt').value
+        +'&ms='+msEl.value;
+  fetch(p).then(r=>r.json()).then(j=>{
+    if(j.ok){
+      log('坐标 → 角度 '+j.angles.join(' / ')+(j.clamped?'（有限位裁剪）':''));
+      j.angles.forEach((a,i)=>{ S[i].value=a; document.getElementById('v'+i).textContent=a; });
+      touch=Date.now();
+    }else{
+      log('不可达：'+(j.err||'解算失败'));
+    }
+  }).catch(()=>log('ESP 无响应'));
+}
+document.getElementById('move').onclick=moveTo;
+/* 直线移动：先把当前点定位成已知起点，再让末端沿直线走 —— 走出来的轨迹才是直线 */
+function moveLine(){
+  const px=document.getElementById('px').value, py=document.getElementById('py').value, pz=document.getElementById('pz').value;
+  const p='/api/line?x='+px+'&y='+py+'&z='+pz
+        +'&pitch='+document.getElementById('pt').value
+        +'&ms='+(parseInt(msEl.value,10)>0?msEl.value:800);
+  fetch(p).then(r=>r.json()).then(j=>{
+    if(j.ok){ log('直线移动 → ['+j.to.join(', ')+']  '+j.ms+'ms / '+j.steps+' 段'); }
+    else { log('直线移动失败：'+(j.err||'解算失败')); }
+  }).catch(()=>log('ESP 无响应'));
+}
+document.getElementById('line').onclick=moveLine;
+const stEl=document.getElementById('st');
+function log(t){ stEl.textContent=t; }
+function poll(){
+  fetch('/api/state').then(r=>r.json()).then(j=>{
+    const m=j.mode==1?'远程':'体感';
+    stEl.textContent='地址：http://'+(j.ip||location.host)+'/  固件：'+(j.fw||'?')+'\n模式：'+m+'  链路：'+(j.link?'在线':'无回复')+'\n角度：'+j.angles.join(' / ')+(j.xyz?('\n末端：X '+j.xyz[0]+'  Y '+j.xyz[1]+'  Z '+j.xyz[2]+' cm'):'');
+    if(j.mode==1&&Date.now()-touch>2000){ j.angles.forEach((a,i)=>{ if(S[i]){ S[i].value=a; document.getElementById('v'+i).textContent=a; } }); }
+  }).catch(()=>{ stEl.textContent='ESP 无响应'; });
+}
+poll(); setInterval(poll,1000);
+/* 固件升级：把 .bin 原样 POST 到 /update（流式写 flash，成功后自动重启） */
+document.getElementById('up').onclick=()=>{
+  const f=document.getElementById('fw').files[0];
+  if(!f){ log('先选一个 .bin 文件'); return; }
+  const x=new XMLHttpRequest();
+  x.open('POST','/update');
+  x.upload.onprogress=e=>{
+    if(e.lengthComputable){ document.getElementById('pg').textContent=Math.round(e.loaded*100/e.total)+'%'; }
+  };
+  x.onload=()=>{
+    document.getElementById('pg').textContent='';
+    log('升级返回：'+x.responseText+(x.responseText.indexOf('OK')>=0?'，正在重启，10 秒后刷新页面':''));
+    if(x.responseText.indexOf('OK')>=0){ setTimeout(()=>location.reload(),10000); }
+  };
+  x.onerror=()=>{ document.getElementById('pg').textContent=''; log('上传失败（网络中断？）'); };
+  document.getElementById('pg').textContent='发送中…';
+  x.send(f);
+};
+/* 烧 STM32：把 hand_app.bin POST 到 /update_stm32，由 ESP32-S3 拆帧走串口 IAP。
+   注意：进度条 100% 只代表"文件已经发给 ESP32-S3"，之后它还要一帧一帧往
+   STM32 写（40 字节一帧，约 1000 帧），TTP 一般还要 10~30 秒。 */
+function waitArmBack(n){
+  const pg=document.getElementById('pg2');
+  if(n>=20){ pg.textContent='⚠ STM32 20 秒没回话'; log('⚠ 20 秒没等到 STM32 回话：检查串口线/共地，或断电重启一次'); return; }
+  /* 每轮顺手发一次 Q：STM32 只有在收到 Q 时才回 VR,<版本>，
+   * 不主动问就会一直显示升级前缓存的旧版本号（看起来像"没升级成功"）。 */
+  fetch('/api/query').catch(()=>{});
+  fetch('/api/state').then(r=>r.json()).then(j=>{
+    if(j.link===1 && j.stm32 && j.stm32!=='-'){
+      pg.textContent='✅ 升级成功，当前版本 '+j.stm32;
+      log('✅ STM32 已恢复：版本 '+j.stm32+'，ESP 固件 '+j.fw);
+    } else {
+      pg.textContent='等待 STM32 回话… '+n+'/20';
+      setTimeout(()=>waitArmBack(n+1),1000);
+    }
+  }).catch(()=>setTimeout(()=>waitArmBack(n+1),1000));
+}
+document.getElementById('up2').onclick=()=>{
+  const f=document.getElementById('fw2').files[0];
+  if(!f){ log('先选一个 hand_app.bin'); return; }
+  const pg=document.getElementById('pg2');
+  const t0=Date.now();
+  const tick=setInterval(()=>{
+    const s=Math.round((Date.now()-t0)/1000);
+    if(pg.dataset.phase==='wait'){
+      pg.textContent='数据已发完，STM32 正在写入并重启… 已等 '+s+' 秒（通常 10~30 秒）';
+    }
+  },500);
+  const x=new XMLHttpRequest();
+  x.open('POST','/update_stm32');
+  x.timeout=180000;
+  x.upload.onprogress=e=>{
+    if(e.lengthComputable){
+      const pc=Math.round(e.loaded*100/e.total);
+      pg.dataset.phase = (e.loaded>=e.total) ? 'wait' : 'up';
+      pg.textContent = (e.loaded>=e.total)
+        ? '数据已发完，等待 STM32 写入并重启…'
+        : '上传 '+pc+'%（先发到 ESP32-S3，再由它拆帧写 STM32）';
+    }
+  };
+  x.onload=()=>{
+    clearInterval(tick);
+    pg.dataset.phase='';
+    const used=Math.round((Date.now()-t0)/1000);
+    if(x.status===200 && x.responseText.indexOf('"ok":1')>=0){
+      log('✅ 写入完成（'+used+' 秒）：'+x.responseText);
+      pg.textContent='已写入，等待 STM32 重启回话…';
+      waitArmBack(0);
+    } else {
+      pg.textContent='❌ 失败';
+      log('❌ 升级失败（HTTP '+x.status+'）：'+x.responseText);
+    }
+  };
+  x.onerror  =()=>{ clearInterval(tick); pg.dataset.phase=''; pg.textContent=''; log('❌ 上传失败（网络中断）'); };
+  x.ontimeout=()=>{ clearInterval(tick); pg.dataset.phase=''; pg.textContent=''; log('❌ 超时：3 分钟没回话，检查串口链路'); };
+  pg.dataset.phase='up';
+  pg.textContent='开始上传…';
+  x.send(f);
+};
+</script></body></html>

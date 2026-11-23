@@ -1,0 +1,25 @@
+# 两个工程统一的代码风格（Keil / ESP-IDF 都用得上）
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: true
+PointerAlignment: Right
+SpacesBeforeTrailingComments: 2
+ReflowComments: true
+SortIncludes: false
+AlignEscapedNewlines: Right
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+BreakStringLiterals: false
+IndentPPDirectives: None
+SpaceBeforeParens: ControlStatements
+Cpp11BracedListStyle: true

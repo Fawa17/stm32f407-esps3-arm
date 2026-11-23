@@ -1,0 +1,18 @@
+﻿# 编译产物与个人配置
+Objects/
+build/
+MDK-ARM/*/
+*.uvguix.*
+*.log
+*.hex
+*.bin
+*.axf
+*.o
+*.d
+*.crf
+*.lst
+*.map
+.vscode/
+sdkconfig
+Thumbs.db
+desktop.ini

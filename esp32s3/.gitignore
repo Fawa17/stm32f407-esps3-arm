@@ -1,0 +1,17 @@
+# ESP-IDF 产物
+build/
+managed_components/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+
+# Python
+__pycache__/
+*.pyc
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
+# Keil GUI 状态
+*.uvguix.*

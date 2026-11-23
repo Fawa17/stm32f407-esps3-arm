@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>STM32F407VET6 六轴机械臂 · 接线图</title>
+<style>
+  :root { --ink:#e8edf7; --bg:#0f1420; --card:#182033; --line:#2b3750;
+          --pwr:#ff6b6b; --gnd:#7d8aa5; --sig:#4dd4ac; --i2c:#6aa8ff; --uart:#ffc857; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:24px 32px 48px; background:var(--bg); color:var(--ink);
+         font-family:"Microsoft YaHei","Segoe UI",sans-serif; }
+  h1 { font-size:22px; margin:0 0 4px; font-weight:600; letter-spacing:.5px; }
+  .sub { color:#8b9ab5; font-size:13px; margin-bottom:20px; }
+  .legend { display:flex; gap:20px; flex-wrap:wrap; font-size:12.5px; margin-bottom:14px; }
+  .legend i { display:inline-block; width:22px; height:3px; vertical-align:middle; margin-right:6px; border-radius:2px; }
+  .wrap { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; overflow:auto; }
+  svg { display:block; margin:0 auto; max-width:100%; height:auto; }
+  table { border-collapse:collapse; width:100%; margin-top:22px; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; }
+  th { background:#1d2740; font-weight:600; }
+  td code { background:#0d1220; padding:1px 6px; border-radius:4px; color:#9ad9ff; }
+  .note { margin-top:18px; font-size:13px; line-height:1.9; color:#b9c6dd; }
+  .note b { color:#ffd479; }
+  @media print { body { background:#fff; color:#111; } .wrap,.note { border-color:#ccc; }
+    th { background:#eee; } td code { background:#f2f2f2; color:#0a58a0; } }
+</style>
+</head>
+<body>
+<h1>STM32F407VET6 · 六轴机械臂接线图</h1>
+<div class="sub">固件：C:\STM32\smart hand　·　PWM 50Hz / 500–2500µs　·　全部舵机信号在 GPIOA</div>
+
+<div class="legend">
+  <span><i style="background:var(--sig)"></i>PWM 信号</span>
+  <span><i style="background:var(--pwr)"></i>5V 电源</span>
+  <span><i style="background:var(--gnd)"></i>GND 共地</span>
+  <span><i style="background:var(--i2c)"></i>I2C</span>
+  <span><i style="background:var(--uart)"></i>UART</span>
+</div>
+
+<div class="wrap">
+<svg viewBox="0 0 1120 760" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,Segoe UI,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4dd4ac"/>
+    </marker>
+    <marker id="b" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#ffc857"/>
+    </marker>
+    <marker id="c" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#6aa8ff"/>
+    </marker>
+    <marker id="d" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#ff6b6b"/>
+    </marker>
+  </defs>
+
+  <!-- ========== STM32 ========== -->
+  <rect x="320" y="70" width="340" height="450" rx="10" fill="#1b2a45" stroke="#4a6ea8" stroke-width="1.6"/>
+  <text x="490" y="100" fill="#cfe0ff" font-size="16" text-anchor="middle" font-weight="700">STM32F407VET6</text>
+  <text x="490" y="122" fill="#8b9ab5" font-size="12" text-anchor="middle">168MHz · FreeRTOS 四任务 · 3.3V 逻辑</text>
+
+  <g font-size="13.5" fill="#a9bcd8">
+    <text x="340" y="162">PA0　TIM2_CH1</text>
+    <text x="340" y="190">PA1　TIM2_CH2</text>
+    <text x="340" y="218">PA2　TIM2_CH3</text>
+    <text x="340" y="246">PA3　TIM2_CH4</text>
+    <text x="340" y="274">PA6　TIM3_CH1</text>
+    <text x="340" y="302">PA7　TIM3_CH2</text>
+    <text x="340" y="348" fill="#6aa8ff">PB6　I2C1_SCL</text>
+    <text x="340" y="376" fill="#6aa8ff">PB7　I2C1_SDA</text>
+    <text x="340" y="412" fill="#6aa8ff">PB10 I2C2_SCL</text>
+    <text x="340" y="438" fill="#6aa8ff">PB11 I2C2_SDA</text>
+    <text x="340" y="472" fill="#ffc857">PA9  USART1_TX</text>
+    <text x="340" y="494" fill="#ffc857">PA10 USART1_RX</text>
+  </g>
+  
+
+  <!-- ========== 舵机 ========== -->
+  <rect x="720" y="70" width="370" height="286" rx="10" fill="#16233a" stroke="#34507a"/>
+  <text x="905" y="96" fill="#9ad9ff" font-size="14" text-anchor="middle" font-weight="600">六路舵机（PWM 50Hz）</text>
+  <g font-size="12.5">
+    <text x="738" y="126" fill="#4dd4ac">轴0 底座旋转　← PA0</text>
+    <text x="972" y="126" fill="#8b9ab5">TIM2_CH1</text>
+    <text x="738" y="156" fill="#4dd4ac">轴1 大臂俯仰　← PA1</text>
+    <text x="972" y="156" fill="#8b9ab5">TIM2_CH2</text>
+    <text x="738" y="186" fill="#4dd4ac">轴2 小臂俯仰　← PA2</text>
+    <text x="972" y="186" fill="#8b9ab5">TIM2_CH3</text>
+    <text x="738" y="216" fill="#4dd4ac">轴3 腕部俯仰　← PA3</text>
+    <text x="972" y="216" fill="#8b9ab5">TIM2_CH4</text>
+    <text x="738" y="246" fill="#4dd4ac">轴4 腕部旋转　← PA6</text>
+    <text x="972" y="246" fill="#8b9ab5">TIM3_CH1</text>
+    <text x="738" y="276" fill="#4dd4ac">轴5 夹爪开合　← PA7</text>
+    <text x="972" y="276" fill="#8b9ab5">TIM3_CH2</text>
+    <text x="738" y="308" fill="#ff9b9b">信号=橙/白　+5V=红　GND=棕/黑</text>
+    <text x="738" y="332" fill="#7f8fa8">脉宽 500~2500µs ＝ 0°~180°</text>
+  </g>
+  <path d="M660,150 H716" stroke="#4dd4ac" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="668" y="142" fill="#7fe3c8" font-size="11">6 路信号</text>
+
+  <!-- ========== 电源 ========== -->
+  <rect x="720" y="378" width="370" height="142" rx="10" fill="#2a1a1a" stroke="#ff6b6b" stroke-width="1.4"/>
+  <text x="905" y="404" fill="#ff9b9b" font-size="14" text-anchor="middle" font-weight="600">外部 5V 舵机电源</text>
+  <text x="738" y="430" fill="#ffb3b3" font-size="12.5">≥5A（MG996R 类舵机建议 ≥10A）</text>
+  <text x="738" y="454" fill="#ffb3b3" font-size="12.5">入口并 1000µF/16V + 0.1µF 瓷片</text>
+  <text x="738" y="478" fill="#ffb3b3" font-size="12.5">+5V → 所有舵机红线（母线）</text>
+  <text x="738" y="502" fill="#c9a0a0" font-size="12.5">GND → 所有舵机黑/棕线 ＋ STM32 GND</text>
+  <path d="M690,430 H716" stroke="#ff6b6b" stroke-width="2" fill="none" marker-end="url(#d)"/>
+  <text x="694" y="422" fill="#ff9b9b" font-size="11">5V</text>
+
+  <!-- ========== 传感器 / OLED / S3 ========== -->
+  <rect x="40" y="560" width="250" height="128" rx="10" fill="#152a2a" stroke="#3f7f6f"/>
+  <text x="165" y="586" fill="#9fe6d2" font-size="14" text-anchor="middle" font-weight="600">MPU6050（I2C2）</text>
+  <text x="58" y="612" fill="#9fe6d2" font-size="12.5">VCC → 3.3V　GND → GND</text>
+  <text x="58" y="636" fill="#9fe6d2" font-size="12.5">SCL → PB10　SDA → PB11</text>
+  <text x="58" y="660" fill="#7fa8a0" font-size="12">AD0 → GND（地址 0x68）</text>
+  <text x="58" y="682" fill="#7fa8a0" font-size="12">INT/XDA/XCL 不接</text>
+
+  <rect x="320" y="560" width="250" height="128" rx="10" fill="#152a2a" stroke="#3f7f6f"/>
+  <text x="445" y="586" fill="#9fe6d2" font-size="14" text-anchor="middle" font-weight="600">OLED 0.96"（I2C1）</text>
+  <text x="338" y="612" fill="#9fe6d2" font-size="12.5">VCC → 3.3V　GND → GND</text>
+  <text x="338" y="636" fill="#9fe6d2" font-size="12.5">SCL → PB6　SDA → PB7</text>
+  <text x="338" y="660" fill="#7fa8a0" font-size="12">400kHz，地址自动探测 0x78/0x7A</text>
+  <text x="338" y="682" fill="#7fa8a0" font-size="12">SH1106 屏需改 OLED_SH1106=1</text>
+
+  <rect x="600" y="560" width="300" height="128" rx="10" fill="#2a2618" stroke="#8a7233"/>
+  <text x="750" y="586" fill="#ffd479" font-size="14" text-anchor="middle" font-weight="600">ESP32-S3（USART1）</text>
+  <text x="618" y="612" fill="#ffd479" font-size="12.5">GPIO17 TX → PA10（交叉）</text>
+  <text x="618" y="636" fill="#ffd479" font-size="12.5">GPIO18 RX ← PA9（交叉）</text>
+  <text x="618" y="660" fill="#d8c48a" font-size="12">3V3/5V 供电 · GND 必须共地</text>
+  <text x="618" y="682" fill="#d8c48a" font-size="12">115200 8N1 · 板载 USB 烧录</text>
+
+  <!-- 连到下方三个外设 -->
+  <path d="M380,520 V538 H165 V556" stroke="#6aa8ff" stroke-width="1.8" fill="none" marker-end="url(#c)"/>
+  <path d="M430,520 V528 H445 V556" stroke="#6aa8ff" stroke-width="1.8" fill="none" marker-end="url(#c)"/>
+  <path d="M520,520 V548 H750 V556" stroke="#ffc857" stroke-width="1.8" fill="none" marker-end="url(#b)"/>
+
+  <!-- 提示 -->
+  <text x="40" y="726" fill="#8b9ab5" font-size="12.5">上电顺序：舵机电源 → STM32 → ESP32-S3；先接信号线，后上电。所有 GND 单点汇集。</text>
+  <text x="40" y="748" fill="#ff9b9b" font-size="12.5">⚠ 舵机绝不从 STM32 板子的 5V/3.3V 引脚取电；大电流走线单独、加粗。</text>
+</svg>
+</div>
+
+<table>
+  <thead><tr><th>功能</th><th>MCU 引脚</th><th>对端</th><th>电平 / 参数</th></tr></thead>
+  <tbody>
+    <tr><td>底座舵机</td><td><code>PA0</code> TIM2_CH1</td><td>舵机 0 信号（橙/白）</td><td>PWM 50Hz</td></tr>
+    <tr><td>大臂舵机</td><td><code>PA1</code> TIM2_CH2</td><td>舵机 1 信号</td><td>PWM 50Hz</td></tr>
+    <tr><td>小臂舵机</td><td><code>PA2</code> TIM2_CH3</td><td>舵机 2 信号</td><td>PWM 50Hz</td></tr>
+    <tr><td>腕俯仰舵机</td><td><code>PA3</code> TIM2_CH4</td><td>舵机 3 信号</td><td>PWM 50Hz</td></tr>
+    <tr><td>腕旋转舵机</td><td><code>PA6</code> TIM3_CH1</td><td>舵机 4 信号</td><td>PWM 50Hz</td></tr>
+    <tr><td>夹爪舵机</td><td><code>PA7</code> TIM3_CH2</td><td>舵机 5 信号</td><td>PWM 50Hz</td></tr>
+    <tr><td>MPU6050</td><td><code>PB10</code> / <code>PB11</code></td><td>SCL / SDA</td><td>I2C2 100kHz，3.3V</td></tr>
+    <tr><td>OLED</td><td><code>PB6</code> / <code>PB7</code></td><td>SCL / SDA</td><td>I2C1 400kHz，3.3V</td></tr>
+    <tr><td>ESP32-S3</td><td><code>PA9</code> TX / <code>PA10</code> RX</td><td>GPIO18 / GPIO17</td><td>115200 8N1，3.3V</td></tr>
+    <tr><td>下载调试</td><td><code>PA13</code> / <code>PA14</code></td><td>SWDIO / SWCLK</td><td>SWD 模式</td></tr>
+    <tr><td>调试串口</td><td><code>PD8</code> / <code>PD9</code></td><td>USB-TTL RX / TX</td><td>115200 8N1（可选）</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <b>上电顺序：</b>舵机电源 → STM32 → ESP32-S3。<b>先接信号，后上电。</b><br>
+  <b>舵机 +5V 与 GND</b> 全部并到外部电源，STM32 只出信号线（GND 必须共）。<br>
+  <b>烧录：</b>Keil F8（SWD）；ESP32-S3 用板载 USB：<code>C:\STM32\hand_s3\build.bat flash &lt;COM号&gt;</code>。<br>
+  <b>网页：</b><code>http://172.19.62.150/</code>（S3 与手机/电脑在同一热点；号段不同就改 <code>app_main.cpp</code> 的 STATIC_IP 重新烧）。
+</div>
+</body>
+</html>

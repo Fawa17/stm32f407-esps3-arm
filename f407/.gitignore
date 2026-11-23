@@ -1,0 +1,53 @@
+﻿# Keil / MDK 产物
+MDK-ARM/Objects/
+MDK-ARM/Listings/
+MDK-ARM/**/*.axf
+MDK-ARM/**/*.hex
+MDK-ARM/**/*.bin
+MDK-ARM/**/*.map
+MDK-ARM/**/*.lst
+MDK-ARM/**/*.o
+MDK-ARM/**/*.d
+MDK-ARM/**/*.crf
+MDK-ARM/**/*.dep
+MDK-ARM/**/*.htm
+MDK-ARM/**/*.lnp
+MDK-ARM/**/*.sct
+MDK-ARM/**/*.bak
+*.Bak
+build.log
+
+# 构建脚本临时目录
+build_tmp/
+.build_esp/
+
+# Python
+__pycache__/
+*.pyc
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 本地备份
+*.bak
+*.oneline.bak
+# Keil GUI 状态
+*.uvguix.*
+
+# CubeMX 带进来但用不上的 CMSIS 大件（DSP 库 4.7MB、NN、文档）
+Drivers/CMSIS/DSP/
+Drivers/CMSIS/NN/
+Drivers/CMSIS/Documentation/
+Drivers/CMSIS/RTOS/
+Drivers/CMSIS/RTOS2/
+
+# Keil 自动生成的备份
+*.bak_*
+*.uvguix.*
+
+# 构建日志
+*.log
+MDK-ARM/app_build.log
